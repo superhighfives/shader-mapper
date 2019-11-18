@@ -36,10 +36,12 @@ export class Mapper {
 
   @Prop() fragment: string
   @Prop() vertex: string
+  @Prop() image: string
 
   canvas: HTMLCanvasElement
   context: any
   program: any
+  textures: any
   output: any
   positionLocation: any
   startTime: any
@@ -47,6 +49,7 @@ export class Mapper {
 
   loadedFragment: any
   loadedVertex: any
+  loadedImages: any
 
   componentDidLoad() {
     this.canvas = this.element.shadowRoot.querySelector('#canvas')
@@ -55,11 +58,13 @@ export class Mapper {
     this.startTime = new Date().getTime()
 
     const loaders = []
+    const images = this.image.split(',')
     const shaders = [
       { name: 'fragment', url: this.fragment },
       { name: 'vertex', url: this.vertex },
     ]
-    const results: any = {}
+    const loadedShaders: any = {}
+    const loadedImages: any = []
 
     shaders.forEach(shader => {
       loaders.push(
@@ -68,18 +73,94 @@ export class Mapper {
             return response.text()
           })
           .then(result => {
-            results[shader.name] = result
+            loadedShaders[shader.name] = result
           })
       )
     })
 
+    images.forEach(url => {
+      loaders.push(
+        new Promise((resolve, reject) => {
+          const img = new Image()
+          img.addEventListener('load', () => {
+            loadedImages.push(img)
+            resolve()
+          })
+          img.addEventListener('error', () => {
+            reject(new Error(`Failed to load image's URL: ${url}`))
+          })
+          img.src = url
+        })
+      )
+    })
+
     Promise.all(loaders).then(() => {
-      this.loadedFragment = results.fragment
-      this.loadedVertex = results.vertex
+      this.loadedFragment = loadedShaders.fragment
+      this.loadedVertex = loadedShaders.vertex
+      this.loadedImages = loadedImages
 
       this.createScene()
+      this.createTextures()
       this.loop()
     })
+  }
+
+  createTextures() {
+    const images = this.loadedImages
+    // const imageAspect = images[0].naturalHeight / images[0].naturalWidth
+
+    this.textures = []
+
+    for (var i = 0; i < images.length; i++) {
+      let texture = this.context.createTexture()
+      this.context.bindTexture(this.context.TEXTURE_2D, texture)
+
+      // Set the parameters so we can render any size image.
+      this.context.texParameteri(
+        this.context.TEXTURE_2D,
+        this.context.TEXTURE_WRAP_S,
+        this.context.CLAMP_TO_EDGE
+      )
+      this.context.texParameteri(
+        this.context.TEXTURE_2D,
+        this.context.TEXTURE_WRAP_T,
+        this.context.CLAMP_TO_EDGE
+      )
+      this.context.texParameteri(
+        this.context.TEXTURE_2D,
+        this.context.TEXTURE_MIN_FILTER,
+        this.context.LINEAR
+      )
+      this.context.texParameteri(
+        this.context.TEXTURE_2D,
+        this.context.TEXTURE_MAG_FILTER,
+        this.context.LINEAR
+      )
+
+      // Upload the image into the texture.
+      this.context.texImage2D(
+        this.context.TEXTURE_2D,
+        0,
+        this.context.RGBA,
+        this.context.RGBA,
+        this.context.UNSIGNED_BYTE,
+        images[i]
+      )
+      this.textures.push(texture)
+
+      // lookup the sampler locations.
+      const u_imageLocation = this.context.getUniformLocation(
+        this.program,
+        `u_image${i}`
+      )
+
+      // set which texture units to render with.
+      this.context.uniform1i(u_imageLocation, i) // texture unit i
+
+      // Set each texture unit to use a particular texture.
+      this.context.activeTexture(this.context[`TEXTURE${i}`])
+      this.context.bindTexture(this.context.TEXTURE_2D, this.textures[i])
+    }
   }
 
   createScene() {

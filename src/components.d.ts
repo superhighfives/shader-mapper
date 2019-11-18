@@ -12,6 +12,7 @@ import { HTMLStencilElement, JSXBase } from '@stencil/core/internal';
 export namespace Components {
   interface ShaderMapper {
     'fragment': string;
+    'image': string;
     'vertex': string;
   }
 }
@@ -32,6 +33,7 @@ declare global {
 declare namespace LocalJSX {
   interface ShaderMapper {
     'fragment'?: string;
+    'image'?: string;
     'vertex'?: string;
   }
 
