@@ -1,30 +1,5 @@
 import { Component, Element, Prop, Host, h } from '@stencil/core'
-
-function Uniform(name, suffix, program, gl) {
-  this.name = name
-  this.suffix = suffix
-  this.gl = gl
-  this.program = program
-  this.location = gl.getUniformLocation(program, name)
-}
-
-Uniform.prototype.set = function(...values) {
-  let method = 'uniform' + this.suffix
-  let args = [this.location].concat(values)
-  this.gl[method].apply(this.gl, args)
-}
-
-function Rect(gl: any) {
-  var buffer = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.bufferData(gl.ARRAY_BUFFER, Rect.verts, gl.STATIC_DRAW)
-}
-
-Rect.verts = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1])
-
-Rect.prototype.render = function(gl: any) {
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-}
+import { Uniform, Rect } from '../../utils/utils'
 
 @Component({
   tag: 'shader-mapper',
@@ -40,12 +15,24 @@ export class Mapper {
 
   canvas: HTMLCanvasElement
   context: any
+
+  ratio: any
+  width: any
+  height: any
+  windowWidth: any
+  windowHeight: any
+
   program: any
   textures: any
   output: any
   positionLocation: any
   startTime: any
+  imageAspect: any
+
   uTime: any
+  uResolution: any
+  uRatio: any
+  uThreshold: any
 
   loadedFragment: any
   loadedVertex: any
@@ -54,6 +41,7 @@ export class Mapper {
   componentDidLoad() {
     this.canvas = this.element.shadowRoot.querySelector('#canvas')
     this.context = this.canvas.getContext('webgl')
+    this.ratio = window.devicePixelRatio
 
     this.startTime = new Date().getTime()
 
@@ -101,13 +89,14 @@ export class Mapper {
 
       this.createScene()
       this.createTextures()
+      this.setSizes()
       this.loop()
     })
   }
 
   createTextures() {
     const images = this.loadedImages
-    // const imageAspect = images[0].naturalHeight / images[0].naturalWidth
+    this.imageAspect = images[0].naturalHeight / images[0].naturalWidth
 
     this.textures = []
 
@@ -172,7 +161,20 @@ export class Mapper {
     this.context.linkProgram(this.program)
     this.context.useProgram(this.program)
 
+    this.uResolution = new Uniform(
+      'u_resolution',
+      '4f',
+      this.program,
+      this.context
+    )
     this.uTime = new Uniform('u_time', '1f', this.program, this.context)
+    this.uRatio = new Uniform('u_pixelRatio', '1f', this.program, this.context)
+    this.uThreshold = new Uniform(
+      'u_threshold',
+      '2f',
+      this.program,
+      this.context
+    )
 
     this.output = new Rect(this.context)
     this.positionLocation = this.context.getAttribLocation(
@@ -187,6 +189,35 @@ export class Mapper {
       false,
       0,
       0
+    )
+  }
+
+  setSizes() {
+    this.windowWidth = window.innerWidth
+    this.windowHeight = window.innerHeight
+    this.width = this.element.offsetWidth
+    this.height = this.element.offsetHeight
+
+    this.canvas.width = this.width * this.ratio
+    this.canvas.height = this.height * this.ratio
+
+    let a1: any, a2: any
+    if (this.height / this.width < this.imageAspect) {
+      a1 = 1
+      a2 = this.height / this.width / this.imageAspect
+    } else {
+      a1 = (this.width / this.height) * this.imageAspect
+      a2 = 1
+    }
+
+    this.uResolution.set(this.width, this.height, a1, a2)
+    this.uRatio.set(1 / this.ratio)
+    this.uThreshold.set(0, 0)
+    this.context.viewport(
+      0,
+      0,
+      this.width * this.ratio,
+      this.height * this.ratio
     )
   }
 
