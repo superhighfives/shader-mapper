@@ -11,7 +11,7 @@ export class Mapper {
 
   @Prop() fragment: string
   @Prop() vertex: string
-  @Prop() image: string
+  @Prop() images: string
 
   canvas: HTMLCanvasElement
   context: any
@@ -27,7 +27,7 @@ export class Mapper {
   output: any
   positionLocation: any
   startTime: any
-  imageAspect: any
+  imagesAspect: any
 
   uTime: any
   uResolution: any
@@ -43,10 +43,12 @@ export class Mapper {
     this.context = this.canvas.getContext('webgl')
     this.ratio = window.devicePixelRatio
 
+    this.context.getExtension('OES_standard_derivatives')
+
     this.startTime = new Date().getTime()
 
     const loaders = []
-    const images = this.image.split(',')
+    const images = this.images && this.images.split(',')
     const shaders = [
       { name: 'fragment', url: this.fragment },
       { name: 'vertex', url: this.vertex },
@@ -66,29 +68,34 @@ export class Mapper {
       )
     })
 
-    images.forEach(url => {
-      loaders.push(
-        new Promise((resolve, reject) => {
-          const img = new Image()
-          img.addEventListener('load', () => {
-            loadedImages.push(img)
-            resolve()
+    images &&
+      images.forEach(url => {
+        loaders.push(
+          new Promise((resolve, reject) => {
+            const img = new Image()
+            img.addEventListener('load', () => {
+              loadedImages.push(img)
+              resolve()
+            })
+            img.addEventListener('error', () => {
+              reject(new Error(`Failed to load image's URL: ${url}`))
+            })
+            img.src = url
           })
-          img.addEventListener('error', () => {
-            reject(new Error(`Failed to load image's URL: ${url}`))
-          })
-          img.src = url
-        })
-      )
-    })
+        )
+      })
 
     Promise.all(loaders).then(() => {
       this.loadedFragment = loadedShaders.fragment
       this.loadedVertex = loadedShaders.vertex
-      this.loadedImages = loadedImages
 
       this.createScene()
-      this.createTextures()
+
+      if (loadedImages.length) {
+        this.loadedImages = loadedImages
+        this.createTextures()
+      }
+
       this.setSizes()
       this.loop()
     })
@@ -96,7 +103,7 @@ export class Mapper {
 
   createTextures() {
     const images = this.loadedImages
-    this.imageAspect = images[0].naturalHeight / images[0].naturalWidth
+    this.imagesAspect = images[0].naturalHeight / images[0].naturalWidth
 
     this.textures = []
 
@@ -202,11 +209,17 @@ export class Mapper {
     this.canvas.height = this.height * this.ratio
 
     let a1: any, a2: any
-    if (this.height / this.width < this.imageAspect) {
-      a1 = 1
-      a2 = this.height / this.width / this.imageAspect
+
+    if (this.imagesAspect) {
+      if (this.height / this.width < this.imagesAspect) {
+        a1 = 1
+        a2 = this.height / this.width / this.imagesAspect
+      } else {
+        a1 = (this.width / this.height) * this.imagesAspect
+        a2 = 1
+      }
     } else {
-      a1 = (this.width / this.height) * this.imageAspect
+      a1 = 1
       a2 = 1
     }
 

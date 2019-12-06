@@ -10,7 +10,7 @@
 | Property   | Attribute  | Description | Type     | Default     |
 | ---------- | ---------- | ----------- | -------- | ----------- |
 | `fragment` | `fragment` |             | `string` | `undefined` |
-| `image`    | `image`    |             | `string` | `undefined` |
+| `images`   | `images`   |             | `string` | `undefined` |
 | `vertex`   | `vertex`   |             | `string` | `undefined` |
 
 
