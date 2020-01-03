@@ -184,8 +184,6 @@ export class Mapper {
 
     this.addShader(this.loadedVertex, this.context.VERTEX_SHADER);
 
-    console.log(this.loadedFragment, this.context.FRAGMENT_SHADER);
-
     this.addShader(this.loadedFragment, this.context.FRAGMENT_SHADER);
 
     this.context.linkProgram(this.program);
