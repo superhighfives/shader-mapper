@@ -42,7 +42,7 @@ export class EasingUniform {
 
   set(value, opts: { delay?: number } = {}) {
     if (this.lastCallback) this.lastCallback.kill();
-    this.lastCallback = gsap.to(this, 1, {
+    this.lastCallback = gsap.to(this, 5, {
       state: value,
       ease: Elastic.easeOut,
       onUpdate: () => {
