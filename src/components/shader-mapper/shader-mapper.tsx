@@ -29,7 +29,7 @@ export class Mapper {
 
   @Listen("turbulenceStop", { target: "window" })
   turbulenceStopHandler() {
-    this.uMovement && this.uMovement.set(0, { delay: 0.25 });
+    this.uMovement && this.uMovement.set(0, { delay: 0.15 });
   }
 
   canvas: HTMLCanvasElement;

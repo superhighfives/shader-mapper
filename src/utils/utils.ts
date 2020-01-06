@@ -1,4 +1,4 @@
-import { gsap, Elastic } from "gsap";
+import { gsap, Elastic, Power2 } from "gsap";
 
 export class Uniform {
   name: any;
@@ -42,9 +42,9 @@ export class EasingUniform {
 
   set(value, opts: { delay?: number } = {}) {
     if (this.lastCallback) this.lastCallback.kill();
-    this.lastCallback = gsap.to(this, 5, {
+    this.lastCallback = gsap.to(this, this.state > value ? 2 : 4, {
       state: value,
-      ease: Elastic.easeOut,
+      ease: this.state > value ? Power2.easeInOut : Elastic.easeOut,
       onUpdate: () => {
         this.gl["uniform" + this.suffix].apply(
           this.gl,
