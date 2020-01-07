@@ -1,5 +1,6 @@
 import { Component, Element, Listen, Prop, Host, h } from "@stencil/core";
 import { Uniform, EasingUniform, Rect } from "../../utils/utils";
+import debounce from "lodash/debounce";
 
 @Component({
   tag: "shader-mapper",
@@ -117,6 +118,13 @@ export class Mapper {
       }
 
       this.setSizes();
+      window.addEventListener(
+        "resize",
+        debounce(() => {
+          this.setSizes();
+        }, 100)
+      );
+
       this.loop();
     });
   }

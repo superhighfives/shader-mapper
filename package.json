@@ -29,7 +29,8 @@
   "license": "MIT",
   "dependencies": {
     "@fab/static": "^0.1.8",
-    "gsap": "^3.0.4"
+    "gsap": "^3.0.4",
+    "lodash": "^4.17.15"
   },
   "resolutions": {
     "@fab/compile": "^0.2.0"
